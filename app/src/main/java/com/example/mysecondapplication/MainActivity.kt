@@ -22,6 +22,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.mysecondapplication.ui.theme.MySecondApplicationTheme
 import androidx.compose.ui.draw.clip
+import com.example.mysecondapplication.model.Product
+import androidx.compose.runtime.Composable
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+
 
 
 class MainActivity : ComponentActivity() {
@@ -35,28 +40,31 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TopBar() {
     TopAppBar(
-        title = {
-            Text("Shop list", modifier = Modifier.fillMaxWidth(), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
-        },
+        title = { Text("Shop list") },
         navigationIcon = {
-            IconButton(onClick = { /* Abrir menú */ }) {
+            IconButton(onClick = { }) {
                 Icon(Icons.Default.Menu, contentDescription = "Menu")
             }
         },
         actions = {
-            IconButton(onClick = { /* Perfil */ }) {
-                Icon(Icons.Default.AccountCircle, contentDescription = "Profile")
+            IconButton(onClick = { }) {
+                Icon(Icons.Default.Person, contentDescription = "Profile")
             }
         }
     )
 }
 
 @Composable
-fun ProductCard() {
+fun ProductCard(
+    product: Product,
+    onAddToFavourite: () -> Unit,
+    onBuy: () -> Unit
+) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -66,8 +74,8 @@ fun ProductCard() {
     ) {
         Column {
             Image(
-                painter = painterResource(id = R.drawable.sample_image),
-                contentDescription = "Leather boots",
+                painter = painterResource(id = product.imageRes),
+                contentDescription = product.title,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(200.dp)
@@ -80,15 +88,15 @@ fun ProductCard() {
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
-                        text = "Leather boots",
+                        text = product.title,
                         fontWeight = FontWeight.Bold,
                         fontSize = 18.sp
                     )
-                    Text(text = "27,5 $")
+                    Text(text = product.price)
                 }
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Great warm shoes from the artificial leather. You can buy this model only in our shop",
+                    text = product.description,
                     style = MaterialTheme.typography.bodyMedium
                 )
                 Spacer(modifier = Modifier.height(12.dp))
@@ -97,14 +105,14 @@ fun ProductCard() {
                     horizontalArrangement = Arrangement.End
                 ) {
                     OutlinedButton(
-                        onClick = { /* Favorito */ },
+                        onClick = onAddToFavourite,
                         shape = RoundedCornerShape(50)
                     ) {
                         Text("Add to favourite")
                     }
                     Spacer(modifier = Modifier.width(8.dp))
                     Button(
-                        onClick = { /* Comprar */ },
+                        onClick = onBuy,
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8B4513)),
                         shape = RoundedCornerShape(50)
                     ) {
@@ -117,57 +125,63 @@ fun ProductCard() {
 }
 
 @Composable
-fun BottomBar(selectedItem: String, onItemSelected: (String) -> Unit) {
-    NavigationBar(containerColor = Color.White) {
-        val items = listOf("Product", "Search", "Cart", "Profile")
-        val icons = listOf(
-            Icons.Default.Home,
-            Icons.Default.Search,
-            Icons.Default.ShoppingCart,
-            Icons.Default.Person
+fun BottomBar(onItemSelected: (String) -> Unit) {
+    NavigationBar {
+        NavigationBarItem(
+            icon = { Icon(Icons.Default.Home, contentDescription = "Product") },
+            label = { Text("Product") },
+            selected = false,
+            onClick = { onItemSelected("Product") }
         )
-
-        items.forEachIndexed { index, item ->
-            NavigationBarItem(
-                icon = {
-                    Icon(
-                        imageVector = icons[index],
-                        contentDescription = item
-                    )
-                },
-                label = { Text(item) },
-                selected = selectedItem == item,
-                onClick = { onItemSelected(item) },
-                alwaysShowLabel = true,
-                colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = Color.White,
-                    selectedTextColor = Color.White,
-                    indicatorColor = Color(0xFF8B4513),
-                    unselectedIconColor = Color.Gray,
-                    unselectedTextColor = Color.Gray
-                )
-            )
-        }
+        NavigationBarItem(
+            icon = { Icon(Icons.Default.Search, contentDescription = "Search") },
+            label = { Text("Search") },
+            selected = false,
+            onClick = { onItemSelected("Search") }
+        )
+        NavigationBarItem(
+            icon = { Icon(Icons.Default.ShoppingCart, contentDescription = "Cart") },
+            label = { Text("Cart") },
+            selected = false,
+            onClick = { onItemSelected("Cart") }
+        )
+        NavigationBarItem(
+            icon = { Icon(Icons.Default.Person, contentDescription = "Profile") },
+            label = { Text("Profile") },
+            selected = false,
+            onClick = { onItemSelected("Profile") }
+        )
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen() {
-    var selectedItem by remember { mutableStateOf("Product") }
+    val products = listOf(
+        Product(R.drawable.sample_image, "Leather boots", "27,5 $", "Great warm shoes from the artificial leather. You can buy this model only in our shop"),
+        Product(R.drawable.sample_image, "Winter Jacket", "49,9 $", "Stylish and warm jacket perfect for winter."),
+        Product(R.drawable.sample_image, "Denim Jeans", "35,0 $", "Classic denim jeans with a modern fit."),
+        Product(R.drawable.sample_image, "Sneakers", "59,0 $", "Comfortable everyday sneakers.")
+    )
 
     Scaffold(
         topBar = { TopBar() },
         bottomBar = {
-            BottomBar(selectedItem = selectedItem) { selectedItem = it }
+            BottomBar { selectedItem ->
+            }
         }
     ) { innerPadding ->
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .padding(innerPadding)
                 .fillMaxSize()
         ) {
-            ProductCard()
+            items(products) { product: Product ->
+                ProductCard(
+                    product = product,
+                    onAddToFavourite = {},
+                    onBuy = { }
+                )
+            }
         }
     }
 }
