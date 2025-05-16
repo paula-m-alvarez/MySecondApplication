@@ -32,6 +32,7 @@ import com.example.mysecondapplication.FavoritesViewModel
 import androidx.compose.foundation.lazy.itemsIndexed
 import kotlinx.coroutines.launch
 import androidx.navigation.NavController
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 
 
 class MainActivity : ComponentActivity() {
@@ -49,6 +50,9 @@ class MainActivity : ComponentActivity() {
                     }
                     composable("favourites") {
                         FavouritesScreen(favoritesViewModel)
+                    }
+                    composable("profile") {
+                        ProfileScreen(navController)
                     }
                 }
             }
@@ -232,6 +236,85 @@ fun BottomBar(onItemSelected: (String) -> Unit) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
+fun ProfileScreen(navController: NavController) {
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Profile") },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    }
+                }
+            )
+        }
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .padding(innerPadding)
+                .padding(16.dp)
+                .fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.default_profile),
+                contentDescription = "Profile Picture",
+                modifier = Modifier
+                    .size(100.dp)
+                    .clip(RoundedCornerShape(50.dp))
+                    .background(Color.Gray)
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+
+            TextField(
+                value = "Mi nombre completo",
+                onValueChange = {},
+                label = { Text("Nombre completo") },
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            TextField(
+                value = "Mi trabajo",
+                onValueChange = {},
+                label = { Text("Trabajo") },
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+
+            TextField(
+                value = "Email",
+                onValueChange = {},
+                label = { Text("Email") },
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            TextField(
+                value = "Phone Number",
+                onValueChange = {},
+                label = { Text("Teléfono") },
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            TextField(
+                value = "Website",
+                onValueChange = {},
+                label = { Text("Sitio web") },
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            TextField(
+                value = "Password",
+                onValueChange = {},
+                label = { Text("Contraseña") },
+                modifier = Modifier.fillMaxWidth(),
+                visualTransformation = PasswordVisualTransformation()
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
 fun MainScreen(navController: NavController, favoritesViewModel: FavoritesViewModel) {
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -255,7 +338,9 @@ fun MainScreen(navController: NavController, favoritesViewModel: FavoritesViewMo
                     selected = false,
                     onClick = {
                         scope.launch { drawerState.close() }
-                        navController.navigate("shop")
+                        navController.navigate("shop") {
+                            popUpTo("shop") { inclusive = true }
+                        }
                     }
                 )
                 NavigationDrawerItem(
@@ -279,7 +364,7 @@ fun MainScreen(navController: NavController, favoritesViewModel: FavoritesViewMo
                         }
                     },
                     actions = {
-                        IconButton(onClick = { }) {
+                        IconButton(onClick = { navController.navigate("profile") }) {
                             Icon(Icons.Default.Person, contentDescription = "Profile")
                         }
                     }
