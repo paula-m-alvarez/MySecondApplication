@@ -49,7 +49,8 @@ class MainActivity : ComponentActivity() {
                         MainScreen(navController, favoritesViewModel)
                     }
                     composable("favourites") {
-                        FavouritesScreen(favoritesViewModel)
+                        val drawerState = rememberDrawerState(DrawerValue.Closed)
+                        FavouritesScreen(navController, drawerState, favoritesViewModel)
                     }
                     composable("profile") {
                         ProfileScreen(navController)
@@ -143,59 +144,89 @@ fun ProductCard(
         }
     }
 }
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FavouritesScreen(favoritesViewModel: FavoritesViewModel) {
+fun FavouritesScreen(
+    navController: NavController,
+    drawerState: DrawerState,
+    favoritesViewModel: FavoritesViewModel
+) {
     val favorites by favoritesViewModel.favorites.collectAsState()
+    val scope = rememberCoroutineScope()
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Favourites") },
-                navigationIcon = {
-                    IconButton(onClick = { /* no action needed */ }) {
-                        Icon(Icons.Default.Menu, contentDescription = "Menu")
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            ModalDrawerSheet {
+                Text("Menu", modifier = Modifier.padding(16.dp))
+                NavigationDrawerItem(
+                    label = { Text("Shop List") },
+                    selected = false,
+                    onClick = {
+                        scope.launch { drawerState.close() }
+                        navController.navigate("shop") {
+                            popUpTo("shop") { inclusive = true }
+                        }
                     }
-                },
-                actions = {
-                    IconButton(onClick = { }) {
-                        Icon(Icons.Default.Person, contentDescription = "Profile")
+                )
+                NavigationDrawerItem(
+                    label = { Text("Favourites") },
+                    selected = true,
+                    onClick = {
+                        scope.launch { drawerState.close() }
                     }
-                }
-            )
-        },
-        bottomBar = { BottomBar { } },
-        floatingActionButton = {
-            FloatingActionButton(onClick = { }) {
-                Text("+ Buy")
+                )
             }
         }
-    ) { innerPadding ->
-        LazyColumn(modifier = Modifier.padding(innerPadding)) {
-            itemsIndexed(favorites) { index: Int, product: Product ->
-                Card(
-                    modifier = Modifier
-                        .padding(8.dp)
-                        .fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text("${index + 1}", modifier = Modifier.padding(end = 8.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(product.title, fontWeight = FontWeight.Bold)
-                            Text(product.price)
+    ) {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text("Favourites") },
+                    navigationIcon = {
+                        IconButton(onClick = { scope.launch { drawerState.open() } }) {
+                            Icon(Icons.Default.Menu, contentDescription = "Menu")
                         }
-                        Image(
-                            painter = painterResource(id = product.imageRes),
-                            contentDescription = null,
-                            modifier = Modifier
-                                .size(64.dp)
-                                .clip(RoundedCornerShape(8.dp))
-                        )
+                    },
+                    actions = {
+                        IconButton(onClick = { navController.navigate("profile") }) {
+                            Icon(Icons.Default.Person, contentDescription = "Profile")
+                        }
+                    }
+                )
+            },
+            bottomBar = { BottomBar { /* manejar navegación inferior si es necesario */ } },
+            floatingActionButton = {
+                FloatingActionButton(onClick = { /* acción para comprar */ }) {
+                    Text("+ Buy")
+                }
+            }
+        ) { innerPadding ->
+            LazyColumn(modifier = Modifier.padding(innerPadding)) {
+                itemsIndexed(favorites) { index: Int, product: Product ->
+                    Card(
+                        modifier = Modifier
+                            .padding(8.dp)
+                            .fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("${index + 1}", modifier = Modifier.padding(end = 8.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(product.title, fontWeight = FontWeight.Bold)
+                                Text(product.price)
+                            }
+                            Image(
+                                painter = painterResource(id = product.imageRes),
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .size(64.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                            )
+                        }
                     }
                 }
             }
