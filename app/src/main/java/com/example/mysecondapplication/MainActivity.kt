@@ -3,10 +3,12 @@ package com.example.mysecondapplication
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -14,27 +16,41 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.mysecondapplication.ui.theme.MySecondApplicationTheme
-import androidx.compose.ui.draw.clip
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import com.example.mysecondapplication.model.Product
-import androidx.compose.runtime.Composable
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-
+import com.example.mysecondapplication.ui.theme.MySecondApplicationTheme
+import com.example.mysecondapplication.FavoritesViewModel
+import androidx.compose.foundation.lazy.itemsIndexed
+import kotlinx.coroutines.launch
+import androidx.navigation.NavController
 
 
 class MainActivity : ComponentActivity() {
+    private val favoritesViewModel by viewModels<FavoritesViewModel>()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             MySecondApplicationTheme {
-                MainScreen()
+                val navController = rememberNavController()
+
+                NavHost(navController = navController, startDestination = "shop") {
+                    composable("shop") {
+                        MainScreen(navController, favoritesViewModel)
+                    }
+                    composable("favourites") {
+                        FavouritesScreen(favoritesViewModel)
+                    }
+                }
             }
         }
     }
@@ -124,6 +140,66 @@ fun ProductCard(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun FavouritesScreen(favoritesViewModel: FavoritesViewModel) {
+    val favorites by favoritesViewModel.favorites.collectAsState()
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Favourites") },
+                navigationIcon = {
+                    IconButton(onClick = { /* no action needed */ }) {
+                        Icon(Icons.Default.Menu, contentDescription = "Menu")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { }) {
+                        Icon(Icons.Default.Person, contentDescription = "Profile")
+                    }
+                }
+            )
+        },
+        bottomBar = { BottomBar { } },
+        floatingActionButton = {
+            FloatingActionButton(onClick = { }) {
+                Text("+ Buy")
+            }
+        }
+    ) { innerPadding ->
+        LazyColumn(modifier = Modifier.padding(innerPadding)) {
+            itemsIndexed(favorites) { index: Int, product: Product ->
+                Card(
+                    modifier = Modifier
+                        .padding(8.dp)
+                        .fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("${index + 1}", modifier = Modifier.padding(end = 8.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(product.title, fontWeight = FontWeight.Bold)
+                            Text(product.price)
+                        }
+                        Image(
+                            painter = painterResource(id = product.imageRes),
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(64.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+
 @Composable
 fun BottomBar(onItemSelected: (String) -> Unit) {
     NavigationBar {
@@ -154,42 +230,83 @@ fun BottomBar(onItemSelected: (String) -> Unit) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainScreen() {
+fun MainScreen(navController: NavController, favoritesViewModel: FavoritesViewModel) {
+    val drawerState = rememberDrawerState(DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
+
     val products = listOf(
-        Product(R.drawable.sample_image, "Leather boots", "27,5 $", "Great warm shoes from the artificial leather. You can buy this model only in our shop"),
-        Product(R.drawable.sample_image, "Winter Jacket", "49,9 $", "Stylish and warm jacket perfect for winter."),
-        Product(R.drawable.sample_image, "Denim Jeans", "35,0 $", "Classic denim jeans with a modern fit."),
-        Product(R.drawable.sample_image, "Sneakers", "59,0 $", "Comfortable everyday sneakers.")
+        Product(R.drawable.sample_image, "Leather boots", "27,5 $", "Great warm shoes from the artificial leather."),
+        Product(R.drawable.sample_image, "Winter Jacket", "49,9 $", "Stylish and warm jacket."),
+        Product(R.drawable.sample_image, "Denim Jeans", "35,0 $", "Classic denim jeans."),
+        Product(R.drawable.sample_image, "Sneakers", "59,0 $", "Everyday sneakers.")
     )
 
-    Scaffold(
-        topBar = { TopBar() },
-        bottomBar = {
-            BottomBar { selectedItem ->
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            ModalDrawerSheet {
+                Text("Menu", modifier = Modifier.padding(16.dp))
+                val scope = rememberCoroutineScope()
+
+                NavigationDrawerItem(
+                    label = { Text("Shop List") },
+                    selected = false,
+                    onClick = {
+                        scope.launch { drawerState.close() }
+                        navController.navigate("shop")
+                    }
+                )
+                NavigationDrawerItem(
+                    label = { Text("Favourites") },
+                    selected = false,
+                    onClick = {
+                        scope.launch { drawerState.close() }
+                        navController.navigate("favourites")
+                    }
+                )
             }
         }
-    ) { innerPadding ->
-        LazyColumn(
-            modifier = Modifier
-                .padding(innerPadding)
-                .fillMaxSize()
-        ) {
-            items(products) { product: Product ->
-                ProductCard(
-                    product = product,
-                    onAddToFavourite = {},
-                    onBuy = { }
+    ) {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text("Shop list") },
+                    navigationIcon = {
+                        IconButton(onClick = { scope.launch { drawerState.open() } }) {
+                            Icon(Icons.Default.Menu, contentDescription = "Menu")
+                        }
+                    },
+                    actions = {
+                        IconButton(onClick = { }) {
+                            Icon(Icons.Default.Person, contentDescription = "Profile")
+                        }
+                    }
                 )
+            },
+            bottomBar = { BottomBar { /* handle bottom nav if needed */ } }
+        ) { innerPadding ->
+            LazyColumn(modifier = Modifier.padding(innerPadding)) {
+                items(products) { product ->
+                    ProductCard(
+                        product = product,
+                        onAddToFavourite = { favoritesViewModel.addFavorite(product) },
+                        onBuy = { /* handle buy */ }
+                    )
+                }
             }
         }
     }
 }
 
+
 @Preview(showBackground = true)
 @Composable
 fun PreviewMainScreen() {
+    val navController = rememberNavController()
+    val favoritesViewModel = FavoritesViewModel()
     MySecondApplicationTheme {
-        MainScreen()
+        MainScreen(navController, favoritesViewModel)
     }
 }
