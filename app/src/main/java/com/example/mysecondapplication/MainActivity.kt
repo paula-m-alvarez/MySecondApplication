@@ -33,6 +33,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import kotlinx.coroutines.launch
 import androidx.navigation.NavController
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.foundation.clickable
 
 
 class MainActivity : ComponentActivity() {
@@ -54,6 +55,9 @@ class MainActivity : ComponentActivity() {
                     }
                     composable("profile") {
                         ProfileScreen(navController)
+                    }
+                    composable("settings") {
+                        SettingsScreen(navController)
                     }
                 }
             }
@@ -171,9 +175,18 @@ fun FavouritesScreen(
                 )
                 NavigationDrawerItem(
                     label = { Text("Favourites") },
-                    selected = true,
+                    selected = false,
                     onClick = {
                         scope.launch { drawerState.close() }
+                        navController.navigate("favourites")
+                    }
+                )
+                NavigationDrawerItem(
+                    label = { Text("Settings") },
+                    selected = false,
+                    onClick = {
+                        scope.launch { drawerState.close() }
+                        navController.navigate("settings")
                     }
                 )
             }
@@ -195,9 +208,9 @@ fun FavouritesScreen(
                     }
                 )
             },
-            bottomBar = { BottomBar { /* manejar navegación inferior si es necesario */ } },
+            bottomBar = { BottomBar { } },
             floatingActionButton = {
-                FloatingActionButton(onClick = { /* acción para comprar */ }) {
+                FloatingActionButton(onClick = { }) {
                     Text("+ Buy")
                 }
             }
@@ -346,6 +359,80 @@ fun ProfileScreen(navController: NavController) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
+fun SettingsScreen(navController: NavController) {
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Settings") },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    }
+                }
+            )
+        }
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .padding(innerPadding)
+                .padding(16.dp)
+                .fillMaxSize()
+        ) {
+            Text("Account", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(vertical = 8.dp))
+            ListItem(
+                headlineContent = { Text("Edit Profile") },
+                modifier = Modifier.clickable { }
+            )
+            ListItem(
+                headlineContent = { Text("Change Password") },
+                modifier = Modifier.clickable { }
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text("Preferences", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(vertical = 8.dp))
+            var pushNotificationsEnabled by remember { mutableStateOf(false) }
+            ListItem(
+                headlineContent = { Text("Push Notifications") },
+                trailingContent = {
+                    Switch(
+                        checked = pushNotificationsEnabled,
+                        onCheckedChange = { pushNotificationsEnabled = it }
+                    )
+                }
+            )
+            var darkModeEnabled by remember { mutableStateOf(false) }
+            ListItem(
+                headlineContent = { Text("Dark Mode") },
+                trailingContent = {
+                    Switch(
+                        checked = darkModeEnabled,
+                        onCheckedChange = { darkModeEnabled = it }
+                    )
+                }
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text("Legal", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(vertical = 8.dp))
+            ListItem(
+                headlineContent = { Text("About Us") },
+                modifier = Modifier.clickable {}
+            )
+            ListItem(
+                headlineContent = { Text("Privacy Policy") },
+                modifier = Modifier.clickable {}
+            )
+            ListItem(
+                headlineContent = { Text("Terms and Conditions") },
+                modifier = Modifier.clickable {}
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
 fun MainScreen(navController: NavController, favoritesViewModel: FavoritesViewModel) {
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -382,6 +469,14 @@ fun MainScreen(navController: NavController, favoritesViewModel: FavoritesViewMo
                         navController.navigate("favourites")
                     }
                 )
+                NavigationDrawerItem(
+                    label = { Text("Settings") },
+                    selected = false,
+                    onClick = {
+                        scope.launch { drawerState.close() }
+                        navController.navigate("settings")
+                    }
+                )
             }
         }
     ) {
@@ -401,14 +496,14 @@ fun MainScreen(navController: NavController, favoritesViewModel: FavoritesViewMo
                     }
                 )
             },
-            bottomBar = { BottomBar { /* handle bottom nav if needed */ } }
+            bottomBar = { BottomBar { } }
         ) { innerPadding ->
             LazyColumn(modifier = Modifier.padding(innerPadding)) {
                 items(products) { product ->
                     ProductCard(
                         product = product,
                         onAddToFavourite = { favoritesViewModel.addFavorite(product) },
-                        onBuy = { /* handle buy */ }
+                        onBuy = {}
                     )
                 }
             }
